@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>EPUB 뷰어</title>
+
+  <!-- EPUB 파일 압축을 풀어주는 JSZip -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.1.5/jszip.min.js"></script>
+  <!-- EPUB.js 라이브러리 -->
+  <script src="https://cdn.jsdelivr.net/npm/epubjs/dist/epub.min.js"></script>
+
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      height: 100%;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+    #toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 12px;
+      border-bottom: 1px solid #ddd;
+      font-size: 14px;
+      box-sizing: border-box;
+    }
+    #viewer {
+      height: calc(100% - 42px); /* 도구막대 높이만큼 빼줌 */
+    }
+    button {
+      border: 1px solid #ccc;
+      background: #f8f8f8;
+      padding: 4px 10px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    button:active {
+      background: #e0e0e0;
+    }
+  </style>
+</head>
+<body>
+  <div id="toolbar">
+    <button id="prev">◀ 이전</button>
+    <span id="title">EPUB 뷰어</span>
+    <button id="next">다음 ▶</button>
+  </div>
+  <div id="viewer"></div>
+
+  <script>
+    // 같은 폴더에 있는 EPUB 파일 이름
+    var bookUrl = "jinabro.epub";   // 파일 이름 다르면 여기만 바꿔 주세요
+
+    // 책 열기
+    var book = ePub(bookUrl);
+    var rendition = book.renderTo("viewer", {
+      width: "100%",
+      height: "100%"
+    });
+
+    // 첫 화면 표시
+    rendition.display();
+
+    // 제목 표시
+    book.loaded.metadata.then(function (meta) {
+      var titleSpan = document.getElementById("title");
+      titleSpan.textContent = meta.title || "EPUB 뷰어";
+    });
+
+    // 버튼으로 페이지 넘기기
+    document.getElementById("prev").addEventListener("click", function (e) {
+      e.preventDefault();
+      rendition.prev();
+    });
+
+    document.getElementById("next").addEventListener("click", function (e) {
+      e.preventDefault();
+      rendition.next();
+    });
+
+    // 키보드 화살표로도 넘기기 (PC에서 테스트용)
+    document.addEventListener("keyup", function (e) {
+      var code = e.keyCode || e.which;
+      if (code === 37) {
+        rendition.prev();
+      } else if (code === 39) {
+        rendition.next();
+      }
+    });
+
+    // ------- 여기서부터 추가: 화면 터치/클릭으로 페이지 넘기기 -------
+
+    // EPUB.js가 책 내용을 iframe 안에 띄우는데,
+    // 그 안에서 클릭이 발생하면 이 이벤트가 호출됩니다.
+    rendition.on("click", function (event) {
+      try {
+        // 클릭한 x좌표 (iframe 안 기준)
+        var x = event.clientX;
+        // 화면 전체 가로 폭
+        var width = event.view && event.view.innerWidth
+          ? event.view.innerWidth
+          : window.innerWidth;
+
+        // 왼쪽 절반 → 이전 페이지, 오른쪽 절반 → 다음 페이지
+        if (x < width / 2) {
+          rendition.prev();
