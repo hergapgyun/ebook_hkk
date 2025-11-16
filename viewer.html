@@ -27,8 +27,7 @@
       box-sizing: border-box;
     }
     #viewer {
-      height: calc(100% - 42px);
-      /* 도구막대 높이만큼 빼줌 */
+      height: calc(100% - 42px); /* 도구막대 높이만큼 빼줌 */
     }
     button {
       border: 1px solid #ccc;
@@ -51,8 +50,8 @@
   <div id="viewer"></div>
 
   <script>
-    // 같은 폴더에 있는 book.epub 파일을 연다고 가정
-    var bookUrl = "test.epub";
+    // 같은 폴더에 있는 EPUB 파일 이름
+    var bookUrl = "test.epub";   // 파일 이름 다르면 여기만 바꿔 주세요
 
     // 책 열기
     var book = ePub(bookUrl);
@@ -81,7 +80,7 @@
       rendition.next();
     });
 
-    // 키보드 화살표로도 넘길 수 있게 (PC에서 테스트용)
+    // 키보드 화살표로도 넘기기 (PC에서 테스트용)
     document.addEventListener("keyup", function (e) {
       var code = e.keyCode || e.which;
       if (code === 37) {
@@ -90,6 +89,20 @@
         rendition.next();
       }
     });
-  </script>
-</body>
-</html>
+
+    // ------- 여기서부터 추가: 화면 터치/클릭으로 페이지 넘기기 -------
+
+    // EPUB.js가 책 내용을 iframe 안에 띄우는데,
+    // 그 안에서 클릭이 발생하면 이 이벤트가 호출됩니다.
+    rendition.on("click", function (event) {
+      try {
+        // 클릭한 x좌표 (iframe 안 기준)
+        var x = event.clientX;
+        // 화면 전체 가로 폭
+        var width = event.view && event.view.innerWidth
+          ? event.view.innerWidth
+          : window.innerWidth;
+
+        // 왼쪽 절반 → 이전 페이지, 오른쪽 절반 → 다음 페이지
+        if (x < width / 2) {
+          rendition.prev();
